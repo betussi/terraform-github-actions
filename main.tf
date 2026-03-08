@@ -68,10 +68,10 @@ resource "azurerm_network_security_group" "nsg" {
         direction                  = "Inbound"
         access                     = "Allow"
         protocol                   = "Tcp"
-        source_port_range          = azurerm_network_interface.nic.ip_configuration[0].private_ip_address  # Permite apenas do IP privado da VM
+        source_port_range          = "*"
         destination_port_range     = "3389"  # Porta RDP
         source_address_prefix      = "*"     # Permite de qualquer lugar (ajuste para mais segurança)
-        destination_address_prefix = "*"
+        destination_address_prefix = azurerm_network_interface.nic.private_ip_address
     }
 }
 
@@ -80,8 +80,8 @@ resource "azurerm_windows_virtual_machine" "vm" {
   name                  = "vm-github-act"
   resource_group_name   = azurerm_resource_group.rg.name
   location              = azurerm_resource_group.rg.location
-  size                  = "Standard_DS2_v2"  # Ajuste o tamanho (DS2_v2 é bom custo-benefício para testes)
-  admin_username        = "admin.betussi"      # Usuário admin (evite "admin" ou "administrator" para segurança)
+  size                  = "Standard_B2s"
+  admin_username        = "admin.betussi"
   admin_password        = "P@ssword12345!"
 
   network_interface_ids = [azurerm_network_interface.nic.id]
