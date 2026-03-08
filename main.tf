@@ -13,6 +13,10 @@ terraform {
   }
 }
 
+provider "azurerm" {
+  features {}
+}
+
 resource "azurerm_resource_group" "rg" {
   name     = "RG-VM-Terraform-Github-Actions-01"
   location = "eastus"
