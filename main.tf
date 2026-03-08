@@ -13,18 +13,6 @@ terraform {
   }
 }
 
-provider "azurerm" {
-  features {}
-  subscription_id = var.azure_subscription_id  # Usará a variável do workflow
-  client_id       = var.azure_client_id
-  tenant_id       = var.azure_tenant_id
-  use_oidc        = true  # Habilita OIDC
-}
-
-variable "azure_subscription_id" {}
-variable "azure_client_id" {}
-variable "azure_tenant_id" {}
-
 resource "azurerm_resource_group" "rg" {
   name     = "RG-VM-Terraform-Github-Actions-01"
   location = "eastus"
