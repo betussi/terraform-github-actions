@@ -116,7 +116,6 @@ output "vm_public_ip" {
 }
 
 output "admin_password" {
-  description = "Senha gerada para a VM (sensível)"
+  description = "Senha gerada para a VM Windows (guarde com segurança!)"
   value       = random_password.vm_admin_password.result
-  sensitive   = true
 }
