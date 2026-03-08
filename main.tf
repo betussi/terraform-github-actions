@@ -77,7 +77,7 @@ resource "azurerm_network_security_group" "nsg" {
 
 
 resource "azurerm_windows_virtual_machine" "vm" {
-  name                  = "vm-terraform-github-actions"
+  name                  = "vm-github-act"
   resource_group_name   = azurerm_resource_group.rg.name
   location              = azurerm_resource_group.rg.location
   size                  = "Standard_DS2_v2"  # Ajuste o tamanho (DS2_v2 é bom custo-benefício para testes)
