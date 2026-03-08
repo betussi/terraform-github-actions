@@ -17,6 +17,17 @@ provider "azurerm" {
   features {}
 }
 
+# Gera uma senha aleatória forte para o admin da VM Windows
+resource "random_password" "vm_admin_password" {
+  length           = 16          # Tamanho recomendado (mínimo 12 para Azure)
+  min_lower        = 1           # Pelo menos 1 letra minúscula
+  min_upper        = 1           # Pelo menos 1 letra maiúscula
+  min_numeric      = 1           # Pelo menos 1 número
+  min_special      = 1           # Pelo menos 1 caractere especial
+  special          = true
+  override_special = "!@#$%^&*()-_=+[]{}<>:?"  # Caracteres especiais permitidos (evita problemas com Azure)
+}
+
 resource "azurerm_resource_group" "rg" {
   name     = "RG-VM-Terraform-Github-Actions-01"
   location = "eastus"
@@ -82,13 +93,12 @@ resource "azurerm_windows_virtual_machine" "vm" {
   location              = azurerm_resource_group.rg.location
   size                  = "Standard_B2s"
   admin_username        = "admin.betussi"
-  admin_password        = "P@ssword12345!"
-
+  admin_password        = random_password.vm_admin_password.result
   network_interface_ids = [azurerm_network_interface.nic.id]
 
   os_disk {
     caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"  # Ou Premium_LRS se quiser mais performance
+    storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
@@ -97,9 +107,16 @@ resource "azurerm_windows_virtual_machine" "vm" {
     sku       = "2025-Datacenter"    
     version   = "latest"
   }
+  timezone    = "E. South America Standard Time"
 }
 
 output "vm_public_ip" {
   description = "IP público da VM para acessar via RDP"
   value       = azurerm_public_ip.pip.ip_address
+}
+
+output "admin_password" {
+  description = "Senha gerada para a VM (sensível)"
+  value       = random_password.vm_admin_password.result
+  sensitive   = true
 }
