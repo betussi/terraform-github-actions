@@ -68,7 +68,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        run: terraform apply -auto-approve -input=false tfplan -lock=false
+        run: terraform apply -auto-approve -input=false -lock=false tfplan
 
       # Opcional: Mostrar outputs importantes após apply (ex: IP da VM)
       - name: Show Outputs after Apply
