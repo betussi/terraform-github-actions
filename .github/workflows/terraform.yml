@@ -1,0 +1,80 @@
+name: Terraform CI/CD - Azure Windows VM
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Permite rodar manualmente no GitHub
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read    # Suficiente para checkout + plan
+      id-token: write   # Obrigatório para OIDC (federated credential)
+
+    env:
+      # Variáveis de autenticação OIDC (pegas dos Repository Secrets)
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
+      ARM_USE_OIDC:        true   # Ativa OIDC no provider azurerm
+
+      # Opcional: variáveis extras do seu projeto (se tiver location, prefixo etc.)
+      # TF_VAR_location: "brazilsouth"   # Exemplo se quiser fixar no workflow
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0   # Versão mais recente e estável (atualize se quiser)
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        if: github.event_name == 'pull_request'
+        run: terraform fmt -check
+        continue-on-error: false   # Falha o job se formato estiver errado
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -input=false -out=tfplan
+
+      - name: Upload Terraform Plan Artifact (para revisão)
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: tfplan
+          retention-days: 1
+
+      # Comentário útil no PR com resumo do plan (opcional, mas muito recomendado)
+      - name: Comment Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          filePath: tfplan.txt   # Precisa gerar tfplan.txt antes se quiser
+          comment_tag: terraform-plan
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: terraform apply -auto-approve -input=false tfplan
+
+      # Opcional: Mostrar outputs importantes após apply (ex: IP da VM)
+      - name: Show Outputs after Apply
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        run: |
+          echo "IP Público da VM Windows:"
+          terraform output -raw vm_public_ip || echo "Não encontrado"
+          echo "Usuário: azureadmin"
+          echo "Senha gerada (sensível): veja no state ou use terraform output admin_password"
